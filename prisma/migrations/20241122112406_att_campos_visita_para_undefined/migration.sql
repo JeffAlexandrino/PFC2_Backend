@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "visitas" ALTER COLUMN "carroEmpresa" DROP NOT NULL,
+ALTER COLUMN "kmFinal" DROP NOT NULL,
+ALTER COLUMN "kmInicial" DROP NOT NULL;

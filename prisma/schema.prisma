@@ -1,0 +1,699 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearchPostgres"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String   @id @default(uuid())
+  name            String   @db.VarChar(256)
+  email           String   @unique @db.VarChar(256)
+  password        String   @db.VarChar(256)
+  ativo           Boolean  @default(true)
+  bloqueado       Boolean  @default(false)
+  isEmailVerified Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+
+  tokens     Token[]
+  userRoles  UserRole[]
+  auditorias Auditoria[]
+  clientes   Cliente[]
+
+  @@map("usuarios")
+}
+
+model Token {
+  id                String    @id @default(uuid())
+  token             String
+  userId            String
+  currentUserRoleId String?
+  blacklisted       Boolean
+  expires           DateTime
+  createdAt         DateTime  @default(now())
+  type              TokenType
+
+  user            User      @relation(fields: [userId], references: [id])
+  currentUserRole UserRole? @relation(fields: [currentUserRoleId], references: [id])
+
+  @@map("tokens")
+}
+
+model EmpresaLogo {
+  id        String @id @default(uuid())
+  fileName  String @db.VarChar(256)
+  mimetype  String @db.VarChar(256)
+  empresaId String @unique
+  buffer    Bytes
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+}
+
+model Empresa {
+  id            String   @id @default(uuid())
+  name          String   @db.VarChar(256)
+  cnpj          String   @unique @db.VarChar(14)
+  empresaLogoId String?
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+
+  empresaLogo EmpresaLogo?
+
+  vendas                Venda[]
+  visitas               Visita[]
+  clientes              Cliente[]
+  produtos              Produto[]
+  servicos              Servico[]
+  userRoles             UserRole[]
+  segmentos             Segmento[]
+  contratos             Contrato[]
+  auditorias            Auditoria[]
+  categorias            Categoria[]
+  fornecedors           Fornecedor[]
+  fabricantes           Fabricante[]
+  formasPagamentos      FormaPagamento[]
+  tiposProdutosServicos TipoProdutoServico[]
+  distribuicoesComissao DistribuicaoComissao[]
+  metaEmpresas          MetaEmpresa[]
+
+  @@map("empresas")
+}
+
+model UserRole {
+  id              String   @id @default(uuid())
+  userId          String
+  empresaId       String
+  ativo           Boolean  @default(true)
+  bloqueado       Boolean  @default(false)
+  fixedCommission Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  role            Role
+
+  metas           Meta[]
+  tokens          Token[]
+  visitas         Visita[]
+  comissoes       Comissao[]
+  roleCommissions RoleCommission[]
+
+  referrerSales           Venda[] @relation("ReferrerSales")
+  salePersonSales         Venda[] @relation("SalePersonSales")
+  insideSalesSales        Venda[] @relation("InsideSalesSales")
+  accountManagerSales     Venda[] @relation("AccountManagerSales")
+  comercialManagerSales   Venda[] @relation("ComercialManagerSales")
+  solutionArchitectSales  Venda[] @relation("SolutionArchitectSales")
+  comercialAssistantSales Venda[] @relation("ComercialAssistantSales")
+
+  user    User    @relation(fields: [userId], references: [id])
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+
+  @@unique([userId, empresaId, role])
+  @@map("user_roles")
+}
+
+model Cliente {
+  id            String   @id @default(uuid())
+  name          String   @db.VarChar(256)
+  cnpj          String   @db.VarChar(14)
+  email         String   @db.VarChar(256)
+  telefone      String   @db.VarChar(156)
+  segmentoId    String
+  empresaId     String
+  responsavelId String?  @db.VarChar(256)
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  comprou       Boolean? @default(false)
+
+  vendas  Venda[]
+  visitas Visita[]
+
+  origem      Origem?
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+  segmento    Segmento @relation(fields: [segmentoId], references: [id])
+  responsavel User?    @relation(fields: [responsavelId], references: [id])
+
+  @@unique([email, empresaId])
+  @@unique([cnpj, empresaId])
+  @@map("clientes")
+}
+
+model Segmento {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(256)
+  empresaId String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  clientes Cliente[]
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+
+  @@unique([name, empresaId])
+  @@map("segmentos")
+}
+
+model TipoProdutoServico {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(256)
+  empresaId String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  produtos Produto[]
+  servicos Servico[]
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+
+  @@map("tipo_produto_servico")
+}
+
+model Produto {
+  id                   String     @id @default(uuid())
+  name                 String     @db.VarChar(256)
+  partNumber           String     @db.VarChar(256)
+  empresaId            String
+  categoriaId          String
+  fabricanteId         String
+  tipoProdutoServicoId String
+  ativo                Boolean    @default(true)
+  updatedAt            DateTime   @updatedAt
+  createdAt            DateTime   @default(now())
+  custoUnit            Float?
+  tipoMoeda            TipoMoeda?
+
+  vendasProduto VendaProduto[]
+
+  empresa            Empresa            @relation(fields: [empresaId], references: [id])
+  categoria          Categoria          @relation(fields: [categoriaId], references: [id])
+  fabricante         Fabricante         @relation(fields: [fabricanteId], references: [id])
+  tipoProdutoServico TipoProdutoServico @relation(fields: [tipoProdutoServicoId], references: [id])
+
+  @@unique([partNumber, empresaId])
+  @@map("produtos")
+}
+
+model Fornecedor {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(256)
+  cnpj      String   @db.VarChar(14)
+  email     String   @db.VarChar(256)
+  empresaId String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  vendasProduto VendaProduto[] @relation("FornecedorToVendaProduto")
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+
+  @@unique([cnpj, empresaId])
+  @@unique([email, empresaId])
+  @@map("fornecedores")
+}
+
+model Fabricante {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(256)
+  empresaId String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  produtos Produto[]
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+
+  @@map("fabricantes")
+}
+
+model Categoria {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(256)
+  empresaId String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  produtos Produto[]
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+
+  @@unique([name, empresaId])
+  @@map("categorias")
+}
+
+model Servico {
+  id                   String    @id @default(uuid())
+  name                 String    @db.VarChar(256)
+  observacoes          String    @db.VarChar(256)
+  empresaId            String
+  tipoProdutoServicoId String
+  ativo                Boolean   @default(true)
+  updatedAt            DateTime  @updatedAt
+  createdAt            DateTime  @default(now())
+  valorCustoHora       Float
+  tipoMoeda            TipoMoeda
+
+  vendasServico VendaServico[]
+
+  empresa            Empresa            @relation(fields: [empresaId], references: [id])
+  tipoProdutoServico TipoProdutoServico @relation(fields: [tipoProdutoServicoId], references: [id])
+
+  @@map("servicos")
+}
+
+model Meta {
+  id             String   @id @default(uuid())
+  userRoleId     String
+  dataInicioMeta DateTime
+  dataFimMeta    DateTime
+  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now())
+
+  tiposMeta ValorTipoMeta[]
+
+  userRole UserRole @relation(fields: [userRoleId], references: [id])
+
+  @@map("metas")
+}
+
+model ValorTipoMeta {
+  id                     String   @id @default(uuid())
+  metaId                 String
+  aceleratorTriggerValue Float
+  commissionTriggerValue Float
+  updatedAt              DateTime @updatedAt
+  createdAt              DateTime @default(now())
+
+  tipoMeta TipoMeta
+
+  meta Meta @relation(fields: [metaId], references: [id], onDelete: Cascade)
+
+  @@map("valor_tipo_meta")
+}
+
+model MetaEmpresa {
+  id             String   @id @default(uuid())
+  empresaId      String
+  dataInicioMeta DateTime
+  dataFimMeta    DateTime
+  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now())
+
+  tiposMeta ValorTipoMetaEmpresa[]
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+
+  @@map("metas_empresa")
+}
+
+model ValorTipoMetaEmpresa {
+  id            String   @id @default(uuid())
+  metaEmpresaId String
+  valorMeta     Float
+  valorAtual    Float?
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+
+  tipoMeta TipoMeta
+
+  metaEmpresa MetaEmpresa @relation(fields: [metaEmpresaId], references: [id], onDelete: Cascade)
+
+  @@map("valor_tipo_meta_empresa")
+}
+
+model Venda {
+  id                    String      @id @default(uuid())
+  accountManagerId      String?
+  insideSalesId         String?
+  referrerId            String?
+  comercialAssistantId  String?
+  comercialManagerId    String?
+  solutionArchitectId   String?
+  clienteId             String
+  numOportunidadeCRM    String?
+  numPedidoDistribuidor String?
+  contratoId            String?
+  empresaId             String
+  vendaRenovacao        Boolean
+  dataVenda             DateTime
+  updatedAt             DateTime    @updatedAt
+  createdAt             DateTime    @default(now())
+  estadoVenda           EstadoVenda @default(INITIAL)
+
+  comissoes  Comissao[]
+  notasVenda NotaVenda[]
+
+  empresa            Empresa    @relation(fields: [empresaId], references: [id])
+  contrato           Contrato?  @relation(fields: [contratoId], references: [id])
+  cliente            Cliente    @relation(fields: [clienteId], references: [id])
+  referrer           UserRole?  @relation("ReferrerSales", fields: [referrerId], references: [id])
+  salePeople         UserRole[] @relation("SalePersonSales") //TODO: Nao utilizado no codigo, mas ainda tem tabelas antigas com valores
+  accountManager     UserRole?  @relation("AccountManagerSales", fields: [accountManagerId], references: [id])
+  insideSales        UserRole?  @relation("InsideSalesSales", fields: [insideSalesId], references: [id])
+  comercialAssistant UserRole?  @relation("ComercialAssistantSales", fields: [comercialAssistantId], references: [id])
+  solutionArchitect  UserRole?  @relation("SolutionArchitectSales", fields: [solutionArchitectId], references: [id])
+  comercialManager   UserRole?  @relation("ComercialManagerSales", fields: [comercialManagerId], references: [id])
+
+  @@map("vendas")
+}
+
+model VendaProduto {
+  id                     String           @id @default(uuid())
+  produtoId              String
+  notaVendaId            String
+  quantidade             Int
+  valorCustoUnit         Float
+  markup                 Float?
+  impostoNota            Float?
+  dedutiveisDistribuidor Float?
+  cotacao                Float
+  tipoMoeda              TipoMoeda?
+  tipoFaturamento        TipoFaturamento?
+
+  fornecedores Fornecedor[] @relation("FornecedorToVendaProduto")
+
+  produto   Produto   @relation(fields: [produtoId], references: [id])
+  notaVenda NotaVenda @relation(fields: [notaVendaId], references: [id], onDelete: Cascade)
+
+  @@unique([notaVendaId, produtoId])
+  @@map("venda_produto")
+}
+
+model VendaServico {
+  id                     String           @id @default(uuid())
+  servicoId              String
+  notaVendaId            String
+  qntdHorasComercial     Int
+  qntdHorasNaoComercial  Int
+  qntdHorasEspecial      Int
+  valorCustoHora         Float
+  markup                 Float?
+  impostoNota            Float?
+  dedutiveisDistribuidor Float?
+  cotacao                Float
+  tipoMoeda              TipoMoeda?
+  tipoFaturamento        TipoFaturamento?
+
+  servico   Servico   @relation(fields: [servicoId], references: [id])
+  notaVenda NotaVenda @relation(fields: [notaVendaId], references: [id], onDelete: Cascade)
+
+  @@unique([notaVendaId, servicoId])
+  @@map("venda_servico")
+}
+
+model Auditoria {
+  id        String   @id @default(uuid())
+  dadoId    String
+  userId    String
+  empresaId String
+  dado      Json
+  data      DateTime @default(now())
+  acao      Acao
+  tabela    Tabela
+
+  usuario User    @relation(fields: [userId], references: [id])
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+
+  @@map("auditoria")
+}
+
+model Comissao {
+  id                         String    @id @default(uuid())
+  vendaId                    String
+  userRoleId                 String
+  notaVendaId                String
+  comissaoPaga               Boolean   @default(false)
+  distributorPaid            Boolean   @default(false)
+  ativo                      Boolean   @default(true)
+  comissao                   Float
+  acelerador                 Float
+  valorMargemBrutaBase       Float
+  porcentCommissionApproved  Float     @default(0)
+  porcentAcceleratorApproved Float     @default(0)
+  dataComissao               DateTime
+  approvedAt                 DateTime?
+  updatedAt                  DateTime  @updatedAt
+  createdAt                  DateTime  @default(now())
+
+  venda     Venda     @relation(fields: [vendaId], references: [id], onDelete: Cascade)
+  userRole  UserRole  @relation(fields: [userRoleId], references: [id])
+  notaVenda NotaVenda @relation(fields: [notaVendaId], references: [id], onDelete: Cascade)
+
+  @@map("comissoes")
+}
+
+model FormaPagamento {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(256)
+  empresaId String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  notasVenda NotaVenda[]
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+
+  @@map("forma_pagamento")
+}
+
+model DataBoleto {
+  id          String   @id @default(uuid())
+  notaVendaId String
+  data        DateTime
+
+  notaVenda NotaVenda @relation(fields: [notaVendaId], references: [id], onDelete: Cascade)
+
+  @@unique([data, notaVendaId])
+  @@map("data_boleto")
+}
+
+model DistribuicaoComissao {
+  id        String   @id @default(uuid())
+  empresaId String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  roleCommissions RoleCommission[]
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+}
+
+model RoleCommission {
+  id                     String   @id @default(uuid())
+  userRoleId             String
+  distribuicaoComissaoId String
+  comissao               Float
+  acelerator             Float
+  updatedAt              DateTime @updatedAt
+  createdAt              DateTime @default(now())
+
+  userRole             UserRole             @relation(fields: [userRoleId], references: [id])
+  distribuicaoComissao DistribuicaoComissao @relation(fields: [distribuicaoComissaoId], references: [id], onDelete: Cascade)
+
+  @@map("CommissionRole")
+}
+
+model Visita {
+  id           String     @id @default(uuid())
+  clienteId    String
+  empresaId    String
+  salePersonId String
+  comentarios  String?    @db.VarChar(256)
+  tipoVisita   VisitType?
+  remoto       Boolean
+  visitaPaga   Boolean    @default(false)
+  carroEmpresa Boolean?
+  kmInicial    Int?
+  kmFinal      Int?
+  dataVisita   DateTime
+  updatedAt    DateTime   @updatedAt
+  createdAt    DateTime   @default(now())
+
+  gastos Gasto[]
+
+  cliente    Cliente  @relation(fields: [clienteId], references: [id])
+  empresa    Empresa  @relation(fields: [empresaId], references: [id])
+  salePerson UserRole @relation(fields: [salePersonId], references: [id])
+
+  @@map("visitas")
+}
+
+model Gasto {
+  id        String   @id @default(uuid())
+  nota      String?  @unique
+  visitaId  String
+  valor     Float
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  tipoGasto  TipoGasto
+  tipoViagem TravelType?
+  dataViagem DateTime?
+
+  carroEmpresa Boolean?
+  kmInicial    Int?
+  kmFinal      Int?
+
+  visita Visita @relation(fields: [visitaId], references: [id], onDelete: Cascade)
+
+  @@map("gastos")
+}
+
+model Contrato {
+  id                      String   @id @default(uuid())
+  name                    String   @db.VarChar(256)
+  empresaId               String
+  comissaoPrimeiraParcela Boolean
+  updatedAt               DateTime @updatedAt
+  createdAt               DateTime @default(now())
+
+  vendas Venda[]
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+}
+
+model NotaVenda {
+  id                     String           @id @default(uuid())
+  codigo                 String?          @db.VarChar(256)
+  vendaId                String
+  numOportunidadeCRM     String?
+  numPedidoDistribuidor  String?
+  formaPagamentoId       String
+  formaParcelamento      Int
+  markup                 Float?
+  impostoNota            Float?
+  dedutiveisDistribuidor Float?
+  dataFaturamento        DateTime
+  updatedAt              DateTime         @updatedAt
+  createdAt              DateTime         @default(now())
+  tipoFaturamento        TipoFaturamento?
+
+  comissoes     Comissao[]
+  datasBoleto   DataBoleto[]
+  vendasProduto VendaProduto[]
+  vendasServico VendaServico[]
+
+  venda          Venda          @relation(fields: [vendaId], references: [id], onDelete: Cascade)
+  formaPagamento FormaPagamento @relation(fields: [formaPagamentoId], references: [id])
+
+  // TODO: Verificar validade de unique
+  // @@unique([vendaId, codigo])
+  @@map("nota_venda")
+}
+
+// TODO: Coverter para tabela
+enum Origem {
+  INDICATION
+  WHATSAPP
+  INSTAGRAM
+  EMAIL
+  LINKEDIN
+  CELLPHONE
+  PARTNER
+}
+
+enum TipoMeta {
+  VISITA
+  FATURAMENTO
+  VALOR_VENDA
+  MARGEM
+  MARKUP_BRUTO
+  MARKUP_LIQUIDO
+}
+
+enum TipoMoeda {
+  BRL
+  USD
+}
+
+enum TipoFaturamento {
+  DIRETO
+  REVENDA
+}
+
+enum TipoGasto {
+  ALIMENTACAO
+  HOSPEDAGEM
+  COMBUSTIVEL
+  PEDAGIO
+  ESTACIONAMENTO
+  COFFE
+  ALMOCO
+  JANTA
+  VIAGEM
+}
+
+enum TravelType {
+  ONIBUS
+  AVIAO
+  TREM
+}
+
+enum TokenType {
+  ACCESS
+  REFRESH
+  RESET_PASSWORD
+  VERIFY_EMAIL
+}
+
+enum EstadoVenda {
+  INITIAL
+  BILLING_AUDIT
+  FINANCIAL_AUDIT
+  AVAILABLE_PAYMENT
+  PAID
+}
+
+enum Acao {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum Tabela {
+  VENDEDOR
+  ADMIN
+  GERENTE
+  USUARIO
+  PAPEL_USUARIO
+  CLIENTE
+  PRODUTO
+  FORNECEDOR
+  META
+  META_EMPRESA
+  SERVICO
+  VENDA
+  VISITA
+  COMISSAO
+  DISTRIBUICAO_COMISSAO
+  CATEGORIA
+  CONTRATO
+  FABRICANTE
+  ORGANIZACAO
+  METODO_PAGAMENTO
+  TIPO_PROD_SERV
+  SEGMENTO
+  AUDITORIA
+}
+
+enum Role {
+  MONITOR
+  ADMIN
+  FINANCIAL_MANAGER
+  COMERCIAL_MANAGER
+  COMMISSIONING_ANALYST
+  SOLUTION_ARCHITECT
+  COMERCIAL_ASSISTANT
+  REFERRER
+  VENDEDOR
+}
+
+enum VisitType {
+  WEBINAR
+  WORKSHOP
+  REUNIAO
+  SUPORTE
+  VISITA
+  TREINAMENTO
+}
