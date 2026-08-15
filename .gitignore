@@ -1,0 +1,10 @@
+node_modules
+dist
+# Keep environment variables out of version control
+#yarn.lock
+#assets
+#package-lock.json
+.env
+coverage
+act.tar.gz
+docs
