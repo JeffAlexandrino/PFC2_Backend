@@ -4,8 +4,8 @@ export type OrganizationTypeSeed = NewOrganization & { id: string };
 
 export const organizationA: OrganizationTypeSeed = {
     id: "organizationA",
-    name: "Protect Solutions LTDA",
-    cnpj: "02281027000125",
+    name: "Projeto Satc LTDA",
+    cnpj: "02372880000152",
 };
 
 export const organizationB: OrganizationTypeSeed = {

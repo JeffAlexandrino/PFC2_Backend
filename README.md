@@ -1,9 +1,3 @@
-<div align="center">
-
-# NextGen ComissionPro - Backend
-
-</div>
-
 ## Programas necessários
 
 Para rodar esta API localmente, alguns programas devem estar instalados no seu sistema. Mantenha sempre a versão estável (`lts`) mais atualizada.
@@ -22,7 +16,7 @@ Para manter versões atualizadas do Node.js de forma mais prática, recomenda-se
 
 ### Docker
 
-O Docker é recomendado para rodar a API localmente sem a necessidade de instalar e configurar um banco de dados manualmente. Para instalá-lo, utilize este [link](https://docs.docker.com/engine/install/).
+O Docker é obrigatório para rodar a API localmente sem a necessidade de instalar e configurar um banco de dados manualmente. Para instalá-lo, utilize este [link](https://docs.docker.com/engine/install/).
 
 ## Variáveis de ambiente
 
@@ -58,7 +52,6 @@ yarn
 
 # Inicializa a imagem em docker para a primeira execução
 yarn first_start
-
 ```
 
 Para derrubar o container do banco de dados:
@@ -98,7 +91,6 @@ Para rodar os testes, o banco deve estar conectado e sem os dados de seed. Para 
 ```
 # Limpa o banco e deixa pronto para os testes
 yarn db:reset
-
 ```
 
 Em seguida:
@@ -127,7 +119,6 @@ Após os testes, utilize:
 ```
 # Para deixar o banco pronto para uso e rodar
 yarn ready
-
 ```
 
 ## Adicionais
@@ -170,16 +161,3 @@ Sendo `<url>` o endereço do novo repositório remoto.
 ### API
 
 Para obter a cotação utilizada na criação de novos produtos ou serviços, o sistema integra-se à [AwesomeAPI](https://docs.awesomeapi.com.br/), responsável por fornecer dados de câmbio atualizados, com limite de até 10 mil requisições mensais.
-
-### Documentação do Sistema
-
-As regras de negócio que definem o funcionamento do sistema estão disponíveis na documentação oficial:
-[Acessar Documentação](https://protectsolutionscombr.sharepoint.com/:b:/s/Onboarding/IQDAWWkq400jRaYOZFk3qo3KAW4mMb_PRUUGRBg7U2Ocv_Q?e=O4MaW7)
-
-### Manual do Usuário
-
-Consulte o manual para entender como utilizar o sistema conforme o papel atribuído ao usuário:
-[Acessar Manual do Usuário](https://protectsolutionscombr.sharepoint.com/:b:/s/Onboarding/IQDjUbezRL-iS6miPHiDUoRJARaGyuufIwCyLZMBYwE3pl8?e=1oOnrN)
-
-### Guia rápido
-Guia rápido para começar a usar o sistema: [Acessar Guia Rápido](https://protectsolutionscombr.sharepoint.com/:b:/s/Onboarding/IQCo7DMvKKXwRptNmqehdzz4Ae8gslFYJxtOn-j8SM0icuQ?e=Cx3PFQ)
